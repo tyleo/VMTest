@@ -1,0 +1,1 @@
+ilasm TailCallEmbedded.il /dll
