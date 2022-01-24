@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -18,12 +18,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ByteCode\ByteCode.csproj" />
+    <ProjectReference Include="..\LuaVM\LuaVM.csproj" />
     <ProjectReference Include="..\ManagedVM.CS\ManagedVM.CS.csproj" />
     <ProjectReference Include="..\NativeVM.CPP\NativeVM.CPP.vcxproj" />
     <ProjectReference Include="..\NativeVM.CS\NativeVM.CS.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="MoonSharp.Interpreter">
+      <HintPath>..\Lua\interpreter\netcore\MoonSharp.Interpreter.dll</HintPath>
+    </Reference>
     <Reference Include="TailCallEmbedded">
       <HintPath>..\TailCallEmbedded\TailCallEmbedded.dll</HintPath>
     </Reference>

@@ -7,6 +7,12 @@
     <ClInclude Include="Op.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EvvmOp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Evvm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -18,6 +24,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VM.cpp">
+      <Filter>SourceFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Evvm.cpp">
       <Filter>SourceFiles</Filter>
     </ClCompile>
   </ItemGroup>

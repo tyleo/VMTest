@@ -25,6 +25,14 @@ namespace ByteCode
             }
         }
 
+        private Code(byte* bytes)
+        {
+            _self = (IntPtr)bytes;
+            _selfAligned = bytes;
+        }
+
+        public static Code FromAllocHGlobal(byte* bytes) => new Code(bytes);
+
         ~Code() => Dispose();
 
         public void Dispose()

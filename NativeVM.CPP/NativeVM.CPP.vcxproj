@@ -19,10 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Evvm.h" />
+    <ClInclude Include="EvvmOp.h" />
     <ClInclude Include="Op.h" />
     <ClInclude Include="VM.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Evvm.cpp" />
     <ClCompile Include="VM.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

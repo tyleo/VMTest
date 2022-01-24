@@ -10,6 +10,35 @@ namespace NativeVM.CS
     /// </summary>
     public static unsafe class Native
     {
+        private static readonly delegate*<void> _evvmStaticInit;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EvvmStaticInit() => _evvmStaticInit();
+
+        private static readonly delegate*<void**> _evvmGetLabelAddresses;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void** EvvmGetLabelAddresses() => _evvmGetLabelAddresses();
+
+        private static readonly delegate*<void*> _evvmNew;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void* EvvmNew() => _evvmNew();
+
+        private static readonly delegate*<void*, void> _evvmDelete;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EvvmDelete(void* self) => _evvmDelete(self);
+
+        private static readonly delegate*<void*, int, int> _evvmGet;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int EvvmGet(void* pSelf, int index) => _evvmGet(pSelf, index);
+
+        private static readonly delegate*<void*, byte*, void> _evvmRun;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EvvmRun(void* pSelf, byte* byteCode) => _evvmRun(pSelf, byteCode);
+
+        public static readonly void** EvvmLabelAddresses;
+
+
+
+
         private static readonly delegate*<void> _vmStaticInit;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void VMStaticInit() => _vmStaticInit();
@@ -88,6 +117,17 @@ namespace NativeVM.CS
         static Native()
         {
             if (!NativeLibrary.TryLoad("NativeVM.CPP.dll", out var dll)) throw new Exception("NativeVM.CPP.dll not found.");
+
+            _evvmStaticInit = (delegate*<void>)GetExport(dll, "EvvmStaticInit");
+            _evvmGetLabelAddresses = (delegate*<void**>)GetExport(dll, "EvvmGetLabelAddresses");
+            _evvmNew = (delegate*<void*>)GetExport(dll, "EvvmNew");
+            _evvmDelete = (delegate*<void*, void>)GetExport(dll, "EvvmDelete");
+            _evvmGet = (delegate*<void*, int, int>)GetExport(dll, "EvvmGet");
+            _evvmRun = (delegate*<void*, byte*, void>)GetExport(dll, "EvvmRun");
+
+            EvvmStaticInit();
+            EvvmLabelAddresses = EvvmGetLabelAddresses();
+
             _vmStaticInit = (delegate*<void>)GetExport(dll, "VMStaticInit");
             _vmGetFunctionAddresses = (delegate*<void**>)GetExport(dll, "VMGetFunctionAddresses");
             _vmGetEmbeddedFunctionAddresses = (delegate*<void**>)GetExport(dll, "VMGetEmbeddedFunctionAddresses");

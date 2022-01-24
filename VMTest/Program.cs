@@ -1,6 +1,7 @@
 ﻿using ByteCode;
 using ManagedVM.CS;
 using NativeVM.CS;
+using LuaVM;
 using System;
 using System.Diagnostics;
 
@@ -10,11 +11,24 @@ namespace VMTest
     {
         private delegate Code PreprocessDelegate(Code byteCode);
         private delegate int RunDelegate(byte* byteCode);
+        private delegate int LuaDelegate();
+
+        private static Code EvvmTest()
+        {
+            var factory = EvvmFactory
+                .New()
+                .BranchIfLessI32_I32i_I32i_I32i(0, 1, 1 + sizeof(int) + sizeof(int) + sizeof(int))
+                .End();
+            return Evvm.Preprocess(new Code(factory.ToArray(), 1));
+        }
 
         public static void Main()
         {
+            var fibonacciValue = 1000;
             var mixedOpByteCode = GenMixedOp(1000);
-            var fibonacciByteCode = GenFibonacci(1000);
+            var fibonacciByteCode = GenFibonacci(fibonacciValue);
+
+            var evvmFibonacciByteCode = EvvmFiboacci(fibonacciValue);
 
             var stopWatch = new Stopwatch();
 
@@ -95,21 +109,35 @@ namespace VMTest
                 return nativeSwitchDispatchVM.Last;
             };
 
+            var luaVM = new CLuaVM();
+            luaVM.Prepare(fibonacciValue);
+            int runLuaVM()
+            {
+                return luaVM.Fibonacci();
+            };
+
+            var evvm = new Evvm();
+            int runEvvm(byte* byteCode)
+            {
+                evvm.Run(byteCode);
+                return evvm.Get(8);
+            }
+
             var times = 100000;
 
-            Console.WriteLine("MixedOp");
-            Run("ManagedCallVM", runManagedCallVM, ManagedCallVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            Run("ManagedCalliVM", runManagedCalliVM, ManagedCalliVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            Run("ManagedCalliEmbeddedVM", runManagedCalliEmbeddedVM, ManagedCalliEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var managedSwitchDispatchMixedOpTime = Run("ManagedSwitchDispatchVM", runManagedSwitchDispatchVM, ManagedSwitchDispatchVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var managedTailCallEmbeddedMixedOpTime = Run("ManagedTailCallEmbeddedVM", runManagedTailCallEmbeddedVM, ManagedTailCallEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeAddressOfLabelMixedOpTime = Run("NativeAddressOfLabelVM", runNativeAddressOfLabelVM, NativeAddressOfLabelVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeAddressOfLabelEmbeddedMixedOpTime = Run("NativeAddressOfLabelEmbeddedVM", runNativeAddressOfLabelEmbeddedVM, NativeAddressOfLabelEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeAddressOfLabelEmbeddedAlignedMixedOpTime = Run("NativeAddressOfLabelEmbeddedAlignedVM", runNativeAddressOfLabelEmbeddedAlignedVM, NativeAddressOfLabelEmbeddedAlignedVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeCalliMixedOpTime = Run("NativeCalliVM", runNativeCalliVM, NativeCalliVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeCalliEmbeddedMixedOpTime = Run("NativeCalliEmbeddedVM", runNativeCalliEmbeddedVM, NativeCalliEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            var nativeSwitchDispatchMixedOpTime = Run("NativeSwitchDispatchVM", runNativeSwitchDispatchVM, NativeSwitchDispatchVM.Preprocess(mixedOpByteCode), stopWatch, times);
-            Console.WriteLine();
+            //Console.WriteLine("MixedOp");
+            //Run("ManagedCallVM", runManagedCallVM, ManagedCallVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //Run("ManagedCalliVM", runManagedCalliVM, ManagedCalliVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //Run("ManagedCalliEmbeddedVM", runManagedCalliEmbeddedVM, ManagedCalliEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var managedSwitchDispatchMixedOpTime = Run("ManagedSwitchDispatchVM", runManagedSwitchDispatchVM, ManagedSwitchDispatchVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var managedTailCallEmbeddedMixedOpTime = Run("ManagedTailCallEmbeddedVM", runManagedTailCallEmbeddedVM, ManagedTailCallEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeAddressOfLabelMixedOpTime = Run("NativeAddressOfLabelVM", runNativeAddressOfLabelVM, NativeAddressOfLabelVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeAddressOfLabelEmbeddedMixedOpTime = Run("NativeAddressOfLabelEmbeddedVM", runNativeAddressOfLabelEmbeddedVM, NativeAddressOfLabelEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeAddressOfLabelEmbeddedAlignedMixedOpTime = Run("NativeAddressOfLabelEmbeddedAlignedVM", runNativeAddressOfLabelEmbeddedAlignedVM, NativeAddressOfLabelEmbeddedAlignedVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeCalliMixedOpTime = Run("NativeCalliVM", runNativeCalliVM, NativeCalliVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeCalliEmbeddedMixedOpTime = Run("NativeCalliEmbeddedVM", runNativeCalliEmbeddedVM, NativeCalliEmbeddedVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //var nativeSwitchDispatchMixedOpTime = Run("NativeSwitchDispatchVM", runNativeSwitchDispatchVM, NativeSwitchDispatchVM.Preprocess(mixedOpByteCode), stopWatch, times);
+            //Console.WriteLine();
 
             Console.WriteLine("Fibonacci");
             Run("ManagedCallVM", runManagedCallVM, ManagedCallVM.Preprocess(fibonacciByteCode), stopWatch, times);
@@ -123,33 +151,41 @@ namespace VMTest
             var nativeCalliFibonacciTime = Run("NativeCalliVM", runNativeCalliVM, NativeCalliVM.Preprocess(fibonacciByteCode), stopWatch, times);
             var nativeCalliEmbeddedFibonacciTime = Run("NativeCalliEmbeddedVM", runNativeCalliEmbeddedVM, NativeCalliEmbeddedVM.Preprocess(fibonacciByteCode), stopWatch, times);
             var nativeSwitchDispatchFibonacciTime = Run("NativeSwitchDispatchVM", runNativeSwitchDispatchVM, NativeSwitchDispatchVM.Preprocess(fibonacciByteCode), stopWatch, times);
+            var luaTime = RunLua("LuaVM", runLuaVM, stopWatch, times);
+            var evvmTime = Run("EVVM", runEvvm, evvmFibonacciByteCode, stopWatch, times);
             Console.WriteLine();
 
-            Console.WriteLine($"ManagedTailCallEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)managedTailCallEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"ManagedTailCallEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)managedTailCallEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"ManagedTailCallEmbeddedVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)managedTailCallEmbeddedFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
 
-            Console.WriteLine($"NativeAddressOfLabelVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeAddressOfLabelVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeAddressOfLabelVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeAddressOfLabelFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
 
-            Console.WriteLine($"NativeAddressOfLabelEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeAddressOfLabelEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeAddressOfLabelEmbeddedVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeAddressOfLabelEmbeddedFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
 
-            Console.WriteLine($"NativeAddressOfLabelEmbeddedAlignedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelEmbeddedAlignedMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeAddressOfLabelEmbeddedAlignedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeAddressOfLabelEmbeddedAlignedMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeAddressOfLabelEmbeddedAlignedVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeAddressOfLabelEmbeddedAlignedFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
-            Console.WriteLine($"NativeCalliVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeCalliMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeCalliVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeCalliMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeCalliVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeCalliFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
 
-            Console.WriteLine($"NativeCalliEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeCalliEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeCalliEmbeddedVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeCalliEmbeddedMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeCalliEmbeddedVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeCalliEmbeddedFibonacciTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
 
-            Console.WriteLine($"NativeSwitchDispatchVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeSwitchDispatchMixedOpTime}x faster than ManagedSwitchDispatchVM");
+            // Console.WriteLine($"NativeSwitchDispatchVM MixedOp is {(double)managedSwitchDispatchMixedOpTime / (double)nativeSwitchDispatchMixedOpTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine($"NativeSwitchDispatchVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)nativeSwitchDispatchFibonacciTime}x faster than ManagedSwitchDispatchVM");
+            Console.WriteLine();
+
+            Console.WriteLine($"LuaVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)luaTime}x faster than ManagedSwitchDispatchVM");
+            Console.WriteLine();
+
+            Console.WriteLine($"EVVM Fibonacci is {(double)managedSwitchDispatchFibonacciTime / (double)evvmTime}x faster than ManagedSwitchDispatchVM");
             Console.WriteLine();
         }
 
@@ -234,7 +270,7 @@ namespace VMTest
             var topTargetAddress = factory.CurrentAddress;
 
             factory
-                // var lastCurrent = current;
+                                            // var lastCurrent = current;
                 .Load(2)                    // [iterations, current, next, i, lastCurrent]
                                             // current = next;
                 .Load(2)                    // [iterations, current, next, i, lastCurrent, next]
@@ -269,6 +305,42 @@ namespace VMTest
             return new Code(factory.ToArray());
         }
 
+        private static Code EvvmFiboacci(int iterations)
+        {
+            var factory = EvvmFactory.New()
+                .CopyI32_I32i_I32r(iterations, 4)   // interations
+                .CopyI32_I32i_I32r(0, 8)            // current
+                .CopyI32_I32i_I32r(1, 12)           // next
+                .CopyI32_I32i_I32r(0, 16);          // i
+
+            var branchIfGreaterOrEqual = factory.CurrentAddress;
+            factory
+                .BranchIfGreaterOrEqualI32_I32r_I32r_I32i(16, 4, 0);
+
+            var topTarget = factory.CurrentAddress;
+
+            factory
+                .CopyI32_I32r_I32r(8, 20)
+                .CopyI32_I32r_I32r(12, 8)
+                .AddI32_I32r_I32r_I32r(20, 8, 12)
+                .AddI32_I32i_I32r_I32r(1, 16, 16);
+
+            var branchIfLess = factory.CurrentAddress;
+
+            factory
+                .BranchIfLessI32_I32r_I32r_I32i(16, 4, topTarget);
+
+            var bottomTarget = factory.CurrentAddress;
+
+            factory
+                .End();
+
+            factory.EmplaceInt(branchIfGreaterOrEqual + 1 + sizeof(int) + sizeof(int), bottomTarget);
+            factory.EmplaceInt(branchIfLess + 1 + sizeof(int) + sizeof(int), topTarget);
+
+            return Evvm.Preprocess(new Code(factory.ToArray()));
+        }
+
         private static long Run(string name, RunDelegate run, Code byteCode, Stopwatch stopwatch, int times)
         {
             stopwatch.Reset();
@@ -281,6 +353,27 @@ namespace VMTest
                 run(byteCode.Bytes);
             }
             var result = run(byteCode.Bytes);
+            var time = stopwatch.ElapsedTicks;
+            stopwatch.Stop();
+
+            Console.WriteLine($"{name} result: {result}, time: {time} ticks!");
+            Console.WriteLine();
+
+            return time;
+        }
+
+        private static long RunLua(string name, LuaDelegate run, Stopwatch stopwatch, int times)
+        {
+            stopwatch.Reset();
+
+            Console.WriteLine($"{name}!");
+            run();
+            stopwatch.Start();
+            for (var i = 0; i < times - 1; ++i)
+            {
+                run();
+            }
+            var result = run();
             var time = stopwatch.ElapsedTicks;
             stopwatch.Stop();
 
